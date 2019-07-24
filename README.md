@@ -2,7 +2,7 @@
 
 Simple & small anti virus evasion based on file signature change via AES encryption with Powershell and C# evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
 
-# under development see [tests.ps1](test.ps1) whats working at the moment
+# under development see [tests.ps1](tests.ps1) whats working at the moment
 
 Buzzwords: Anti virus evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
 
@@ -30,7 +30,7 @@ examples:
 ./tvasion.ps1 -t exe tests/ReverseShell_c#amd64.exe   # generate windows executable (.exe) from excecutable
 ```
 Files generated in ./out directory
-See more examples in: [test file](test.ps1)
+See more examples in: [test file](tests.ps1)
 
 ## Setup Debian Stretch / Kali Linux
 
@@ -87,7 +87,7 @@ Run tests:
 - [setup metasploit framework](https://metasploit.help.rapid7.com/docs/installing-the-metasploit-framework)
 - change IP to your IP in ./tests/ReverseShell.ps1 and ./tests/ReverseShell.cs and ./tests.ps1 (we need single configuration)
 - run msfconsole in seperate terminal
-- run ./test.ps1 for compilation / test file creation. see ./out/ for results (16 different malicious files at the moment)
+- run ./tests.ps1 for compilation / test file creation. see ./out/ for results (16 different malicious files at the moment)
 - listen for reverse connections on linux machine:
 ```shell
 # listen for reverse shell connections from ./tests/ReverseShell.ps1 and ./tests/ReverseShell.cs.
