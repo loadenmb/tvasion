@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-# TODO add host + port reverse shell variables for comfortable tests
+# TODO add host + port reverse shell variables for comfortable tests, test all tvasion options
 
 # get current script path
 function getScriptDirectory {
@@ -52,29 +52,31 @@ iex "cp $($__rootPath)/tests/ReverseShell.ps1 $($__rootPath)/out/ReverseShell.ps
 ## see below whats works, what not
 ##
 
+# TODO all ps1 defect
 write-output "output -t ps1:"
-iex "$($__rootPath)/tvasion.ps1 -t ps1 $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1ps1_shell" # works
-iex "$($__rootPath)/tvasion.ps1 -t ps1 $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeps1_shell" # doesn't work with all files, special binary required
+iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1ps1_shell" # works
+iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeps1_shell" # doesn't work with all files, special binary required
 if ($meterpreter) {
-    iex "$($__rootPath)/tvasion.ps1 -t ps1 $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1ps1_meterpreterpsh" # works
-    iex "$($__rootPath)/tvasion.ps1 -t ps1 $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeps1_meterpreter" # works, has DEP, ASLR warning output at the moment
-    #iex "$($__rootPath)/tvasion.ps1 -t ps1 $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeps1_meterpreterx86" # untested
+    iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1ps1_meterpreterpsh" # works
+    iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeps1_meterpreter" # works
+    #iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeps1_meterpreterx86" # untested
 }
 
+# TODO all ps1 defect
 write-output "output -t bat:"
-iex "$($__rootPath)/tvasion.ps1 -t bat $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1bat_shell" # works
+iex "$($__rootPath)/tvasion.ps1 -d -t bat $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1bat_shell" # works
 if ($meterpreter) {
-    iex "$($__rootPath)/tvasion.ps1 -t bat $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exebat_meterpreter" # works maybe: requires small payload else powershell argument too long
-    #iex "$($__rootPath)/tvasion.ps1 -t bat $($__rootPath)/out/Meterpreter_x86.exe-o $($__rootPath)/out/exebat_meterpreterx86" # untested
+    iex "$($__rootPath)/tvasion.ps1 -d -t bat $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exebat_meterpreter" # works
+    #iex "$($__rootPath)/tvasion.ps1 -d -t bat $($__rootPath)/out/Meterpreter_x86.exe-o $($__rootPath)/out/exebat_meterpreterx86" # untested
 }
 
 write-output "output -t exe:"
-iex "$($__rootPath)/tvasion.ps1 -t exe $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1exe_shell" # works
-iex "$($__rootPath)/tvasion.ps1 -t exe $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeexe_shell" # doesn't work with all files, special binary required
+iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1exe_shell" # works
+iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeexe_shell" # doesn't work with all files, special binary required
 if ($meterpreter) {
-    iex "$($__rootPath)/tvasion.ps1 -t exe $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1exe_meterpreterpsh" # works maybe: requires small payload else too large shell execute argument
-    iex "$($__rootPath)/tvasion.ps1 -t exe $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeexe_meterpreter" # works
-    #iex "$($__rootPath)/tvasion.ps1 -t exe $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeexe_meterpreterx86" # untested
+    iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1exe_meterpreterpsh" # works maybe: requires small payload size restriction of arguments length of process.startupinfo.arguments
+    iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeexe_meterpreter" # works
+    #iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeexe_meterpreterx86" # untested
 }
 write-output "tvasion: tests finished! see results in ./out"; 
 

