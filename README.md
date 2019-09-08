@@ -1,7 +1,7 @@
 # tvasion - Powershell / C# AES anti virus evasion 
-Anti virus evasion based on file signature change via AES encryption with Powershell and C# evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
+Anti virus evasion based on file signature change via AES encryption with Powershell and C# AV evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
 
-Buzzwords: Anti virus evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
+Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
 
 [https://github.com/loadenmb/tvasion](https://github.com/loadenmb/tvasion)
 
@@ -10,8 +10,7 @@ Buzzwords: Anti virus evasion, crypter, AES encryption, ReflectivePEInjection, P
 - works with excutable + Powershell payloads
 - AES encryption for file signature change
 - Powershell and C# evasion templates available
-- EXOTIC: Powershell, mcs based developed on Linux for Windows targets :-)
-- easy to extend
+- EXOTIC: Powershell, mono mcs based developed on Linux for Windows targets :-)
 
 ## Usage
 ```
@@ -63,9 +62,9 @@ It's input / output type dependent which template needs changes. See here:
 | powershell    | powershell    | default.ps1                       | Invoke-Expression |
 | executable    | powershell    | default_exe.ps1                   | Invoke-Expression + ReflectivePEInjection (*1) |
 | executable    | executable    | default_exe.cs                    | PEInjection (*1) |
-| powershell    | executable    | default.cs                        | PowerShell execution policy bypass with -enc (*2) |
-| powershell    | batch         | default_bat.ps1 + default.bat     | PowerShell execution policy bypass with -enc + Invoke-Expression |
-| executable    | batch         | default_exe_bat.ps1 + default.bat | PowerShell execution policy bypass with -enc + Invoke-Expression + ReflectivePEInjection (*1) |
+| powershell    | executable    | default.cs                        | PowerShell execution policy bypass with -Enc (*2) |
+| powershell    | batch         | default_bat.ps1 + default.bat     | PowerShell execution policy bypass with -C + Invoke-Expression |
+| executable    | batch         | default_exe_bat.ps1 + default.bat | PowerShell execution policy bypass with -C + Invoke-Expression + ReflectivePEInjection (*1) |
 
 (*1) not all binaries work; Meterpreter, mimikatz work. See [DEP](https://stackoverflow.com/questions/350977/how-to-make-my-program-dep-compatible), [ASLR](https://security.stackexchange.com/questions/18556/how-do-aslr-and-dep-work), and [what to do against](https://security.stackexchange.com/questions/20497/stack-overflows-defeating-canaries-aslr-dep-nx).
 
@@ -75,22 +74,23 @@ It's input / output type dependent which template needs changes. See here:
 
 Payload is created by [tvasion.ps1](tvasion.ps1) like this:
 ```
-                                -> pasted & compiled into 64 bit windows executeable written in C# (.exe -> .exe)
-payload -> AES encryption -> base64 encoded 
+payload -> AES encryption -> base64 encoding 
                                 -> pasted into powershell script (.ps1 -> .ps1) 
-                                        -> base64 encoded 
-                                                -> pasted & into 64 bit windows executeable written in C# (.ps1 -> .exe)             
-                                                -> pasted into batch file (.ps1 | .exe -> .bat)       
+                                        -> base64 encoding 
+                                                -> pasted & compiled into C# windows executeable (.ps1 -> .exe)             
+                                                -> pasted into batch file (.ps1 | .exe -> .bat)  
+                                                
+payload -> gzip compression -> base64 encoding -> pasted & compiled into C# dotnet assembly -> AES encryption -> base64 encoding -> pasted & compiled into C# windows executeable (.exe -> .exe)
 ```
 
 ### Tests
-Windows C# and powershell reverse shells are included in ./tests/ folder for testing purposes. 
+Powershell reverse shell is included in ./tests/ folder for testing purposes. 
 
 Run tests:
 - [setup metasploit framework](https://metasploit.help.rapid7.com/docs/installing-the-metasploit-framework)
-- change IP to your IP in ./tests/ReverseShell.ps1 and ./tests/ReverseShell.cs and ./tests.ps1 (we need single configuration)
+- change IP to your IP in configruation block of: ./tests.ps1
 - run msfconsole in seperate terminal
-- run ./tests.ps1 for compilation / test file creation. see ./out/ for results (16 different malicious files at the moment)
+- run ./tests.ps1 for compilation / test file creation. see ./out/ for results
 - listen for reverse connections on linux machine:
 ```shell
 # listen for reverse shell connections from ./tests/ReverseShell.ps1 and ./tests/ReverseShell.cs.
@@ -106,24 +106,26 @@ resource msf_multihandler.rc
 - copy files from ./out/ directory to target Windows machine & execute
 
 ## Roadmap / TODO / ideas (feel free to work on)
+- add shellcode payloads as input / output type
+- add compression / script comment removement for powershell payloads / templates
 - add better / alternative templates
-    - add better C# PEInjection / remove old, move to encrypted dotnet assembly: PE injection, hide window
     - fix ps1 -> exe payload size restriction / add alternative C# launcher via System.Management.Automation
     - add alternative ps1 -> ps1 template via System.Management.Automation
+    - add encrypted window hide via kernel32 to all powershell stage2 templates (scanners may match for -windowstyle hidden on pwsh launch)?
 - add more evasion / obfocusation functionality:
-    - randomize variable names, white spaces / line breaks / tabs, call order
+    - randomize variable names, white spaces / line breaks / tabs, call order (between markers only)
     - hide native method names
     - better cloaking for encrypted payload string
     - auto generated useless code
-    - payload compression / script comment removement
     - anti virus sandbox escape (maybe via long execution delay or try to allocate many resources until sandbox stops processing)
-- add shellcode payloads as input / output type
 - make ./tvasion.ps1 self run on windows not created files only (never tested, this makes it easy to integrate tvasion in your tools to automatically change your signature with each spread)
 - add new output types:
     - vcf ouput (local code execution, if working in 2019) 
     - .doc + .xls ouput via DDEAUTO or OLE / Powerquery (local code execution without macro)
 - add executable file binder (PE file injection)?
+- create cmdlet / proper psm module?
 - bring back pipes support (string / hex pipes only, pswh has no binary pipes)
+- use constitent rules for replacements: #REPLACE;0#, #REPLACE;1#
 
 ## Contribute
 Discuss features, report issues, questions -> [here](https://github.com/loadenmb/tvasion/issues).

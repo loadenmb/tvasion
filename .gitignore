@@ -2,11 +2,12 @@
 # dolphin
 **/.directory
 
+# dev files
+*_BAK.*
+*_PRIV.*
+
 # malicious test files
 out/*.exe
 out/*.ps1
-
-# dev files
-*_BAK.*
 
 
