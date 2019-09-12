@@ -9,6 +9,7 @@ Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePE
 - outputs 32 bit executable (.exe), Powershell (.ps1) or batch (.bat)
 - works with excutable + Powershell payloads
 - AES encryption for file signature change
+- no hard drive traces / no hard disk write operation
 - Powershell and C# evasion templates available
 - EXOTIC: Powershell, mono mcs based developed on Linux for Windows targets :-)
 
@@ -20,15 +21,16 @@ tvasion: AES based anti virus evasion
 parameter:
 [PAYLOAD (exe|ps1)]       input file path. requires: exe, ps1                     required
 -t (exe|ps1|bat)          output file type: exe, ps1, bat                         required
+-i (PATH)                 path to icon. requires: .exe output (-t exe)            optional
 -f (PATH)                 path to template                                        optional
 -o (PATH)                 set output directory. default is ./out/                 optional
 -d                        generate debug output                                   optional
 -h                        display this help                                       optional
 examples:
 ./tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell
-./tvasion.ps1 -t exe tests/ReverseShell_c#amd64.exe                               # generate windows executable (.exe) from excecutable
+./tvasion.ps1 -t exe out/Meterpreter_amd64.exe -i tests/ghost.ico                 # generate windows executable (.exe) from executable, custom icon (-i)
 ./tvasion.ps1 -t bat tests/ReverseShell.ps1                                       # generate batch (.bat) from powershell
-./tvasion.ps1 -t ps1 tests/ReverseShell_c#amd64.exe -f mytpl1.ps1 -o ../ -d       # ... .exe -> .ps1, custom template (-f), out dir (-o), debug (-d)
+./tvasion.ps1 -t ps1 out/Meterpreter_amd64.exe -f mytpl1.ps1 -o ../ -d            # ... .exe -> .ps1, custom template (-f), out dir (-o), debug (-d)
 ```
 Files generated in ./out directory
 See more examples in: [test file](tests.ps1)
@@ -125,7 +127,7 @@ resource msf_multihandler.rc
 - add executable file binder (PE file injection)?
 - create cmdlet / proper psm module?
 - bring back pipes support (string / hex pipes only, pswh has no binary pipes)
-- use constitent rules for replacements: #REPLACE;0#, #REPLACE;1#
+- use consistent rules for replacements: #REPLACE;0#, #REPLACE;1#
 
 ## Contribute
 Discuss features, report issues, questions -> [here](https://github.com/loadenmb/tvasion/issues).

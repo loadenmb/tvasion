@@ -5,6 +5,7 @@ param(
     [parameter()][String]$t,
     [parameter()][String]$f,
     [parameter()][String]$o,
+    [parameter()][String]$i,
     [switch]$h,
     [switch]$d
 );
@@ -200,8 +201,24 @@ class tvasion {
     [String] $workPath = "";
     [String] $templateData = "";
     [String] $outFileName = "";
+    [String] $iconPath = "";
     
     # "setter" for options
+    
+    setIconPath([String] $path) {
+        # TODO maybe valide if is icon file, use mime type?
+        if (![System.IO.File]::Exists($path)) {
+            throw 'tvasion: icon file not exist';
+            return;
+        } else { 
+
+            if ($this.outType -eq "exe") {
+                $this.iconPath = $path;                  
+            } else {
+                write-host 'tvasion: icon not supported for output type (-i is -t exe only)';
+            }
+        }
+    }
     
     setTemplatePath([String] $path) {
         $this.templatePath = $path;
@@ -224,7 +241,7 @@ class tvasion {
 
     # check input, read files 
     tvasion($payload, [String] $outType) {
-    
+
         # blocks below are ready for pipes, powershell has no binary pipes, disabled at the moment
     
         # read payload from path if argument contains path            
@@ -281,7 +298,8 @@ class tvasion {
         if (!$outputTypes.contains($this.outType)) {
             throw 'tvasion: invalid output type (-t).';
             return;
-        }
+        }    
+
         $this.workPath = Get-Location;
     }
     
@@ -364,6 +382,8 @@ class tvasion {
                 $tmpFileMonoStageOut = [System.IO.Path]::GetTempFileName();
             }              
             $stage2 > $tmpFileMonoStage;
+            
+            # compile stage2 to dll
             mcs $tmpFileMonoStage -platform:x64 -target:library -unsafe -optimize -out:$tmpFileMonoStageOut
             
             # check if compiled file is there
@@ -397,7 +417,14 @@ class tvasion {
         $aesTemplate = [AESBASE64template]::new($this.payload, $this.templateData);
         $aesTemplate.render() > $tmpFileMono; 
         
-        mcs $tmpFileMono -platform:x64 -out:"$($this.outDir)/$($this.outFileName).$($this.outType)" 
+        # use icon for executable if set
+        if (!$this.iconPath -eq "") {
+            $this.iconPath = "-win32icon:`"$($this.iconPath)`"";
+        }
+        
+        # compile .exe output
+        mcs $($tmpFileMono) -platform:x64 -out:"$($this.outDir)/$($this.outFileName).$($this.outType)" $($this.iconPath);
+        
         if (!$this.debug) {
             Remove-Item –Path "$tmpFileMono";
         }
@@ -490,13 +517,14 @@ class tvasion {
         write-host 'parameter:';
         write-host '[PAYLOAD (exe|ps1)]       input file path. requires: exe, ps1                     required';
         write-host '-t (exe|ps1|bat)          output file type: exe, ps1, bat                         required';
+        write-host '-i (PATH)                 path to icon. requires: .exe output (-t exe)            optional';
         write-host '-f (PATH)                 path to template                                        optional';
         write-host '-o (PATH)                 set output directory. default is ./out/                 optional';
         write-host '-d                        generate debug output                                   optional';
         write-host '-h                        display this help                                       optional';
         write-host 'examples:';
-        write-host "./tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell";
-        write-host './tvasion.ps1 -t exe out/Meterpreter_amd64.exe                                    # generate windows executable (.exe) from executable';
+        write-host './tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell';
+        write-host './tvasion.ps1 -t exe out/Meterpreter_amd64.exe -i tests/ghost.ico                 # generate windows executable (.exe) from executable, custom icon (-i)';
         write-host './tvasion.ps1 -t bat tests/ReverseShell.ps1                                       # generate batch (.bat) from powershell';
         write-host './tvasion.ps1 -t ps1 out/Meterpreter_amd64.exe -f mytpl1.ps1 -o ../ -d            # ... .exe -> .ps1, custom template (-f), out dir (-o), debug (-d)';
     }   
@@ -520,6 +548,11 @@ if ($h -or [string]::IsNullOrWhiteSpace($payload)) {
         # set template path (-f)
         if (![string]::IsNullOrWhiteSpace($f)) {
             $tvasion.setTemplatePath($f);
+        }
+        
+        # set icon path (-i)
+        if (![string]::IsNullOrWhiteSpace($i)) {
+            $tvasion.setIconPath($i);
         }
 
         # set debug (-d)
