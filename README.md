@@ -1,5 +1,5 @@
 # tvasion - Powershell / C# AES anti virus evasion 
-Anti virus evasion based on file signature change via AES encryption with Powershell and C# AV evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
+:performing_arts: Anti virus evasion based on file signature change via AES encryption with Powershell and C# AV evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
 
 Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
 
@@ -15,17 +15,17 @@ Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePE
 
 ## Usage
 ```
-./tvasion.ps1 -h
+ ./tvasion.ps1 -h
 tvasion: AES based anti virus evasion
-./tvasion.ps1 -t (exe|bat|ps1) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1)
+./tvasion.ps1 -t (exe|bat|ps1|rawb64ps1) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1)
 parameter:
-[PAYLOAD (exe|ps1)]       input file path. requires: exe, ps1                     required
--t (exe|ps1|bat)          output file type: exe, ps1, bat                         required
--i (PATH)                 path to icon. requires: .exe output (-t exe)            optional
--f (PATH)                 path to template                                        optional
--o (PATH)                 set output directory. default is ./out/                 optional
--d                        generate debug output                                   optional
--h                        display this help                                       optional
+[PAYLOAD (exe|ps1)]         input file path. requires: exe, ps1                     required
+-t (exe|ps1|bat|rawB64ps1)  output file type: exe, ps1, bat, rawB64ps1              required
+-i (PATH)                   path to icon. requires: .exe output (-t exe)            optional
+-f (PATH)                   path to template                                        optional
+-o (PATH)                   set output directory. default is ./out/                 optional
+-d                          generate debug output                                   optional
+-h                          display this help                                       optional
 examples:
 ./tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell
 ./tvasion.ps1 -t exe out/Meterpreter_amd64.exe -i tests/ghost.ico                 # generate windows executable (.exe) from executable, custom icon (-i)
@@ -50,7 +50,10 @@ apt-get install -y mono-mcs
 git clone https://github.com/loadenmb/tvasion.git
 ```
     
-## Details & advanced usage
+## Advanced usage 
+
+### Details
+
 Change AES decryption template source code to make sure evasion output is undetectable by anti virus solutions.
 
 C# and powershell templates from ./templates/ directory basically do: 
@@ -59,14 +62,16 @@ decode -> decrypt -> launch payload
 ```
 It's input / output type dependent which template needs changes. See here:
 
-| payload type  |  output type  | template from ./templates/ folder |  details |
-| ------------- | ------------- | --------------------------------- | -------- |
-| powershell    | powershell    | default.ps1                       | Invoke-Expression |
-| executable    | powershell    | default_exe.ps1                   | Invoke-Expression + ReflectivePEInjection (*1) |
-| executable    | executable    | default_exe.cs                    | PEInjection (*1) |
-| powershell    | executable    | default.cs                        | PowerShell execution policy bypass with -Enc (*2) |
-| powershell    | batch         | default_bat.ps1 + default.bat     | PowerShell execution policy bypass with -C + Invoke-Expression |
-| executable    | batch         | default_exe_bat.ps1 + default.bat | PowerShell execution policy bypass with -C + Invoke-Expression + ReflectivePEInjection (*1) |
+| payload type  |  output type      | template from ./templates/ folder |  details |
+| ------------- | -------------     | --------------------------------- | -------- |
+| powershell    | powershell        | default.ps1                       | Invoke-Expression |
+| executable    | powershell        | default_exe.ps1                   | Invoke-Expression + ReflectivePEInjection (*1) |
+| executable    | executable        | default_exe.cs                    | PEInjection (*1) |
+| powershell    | executable        | default.cs                        | PowerShell execution policy bypass with -Enc (*2) |
+| powershell    | batch             | default_bat.ps1 + default.bat     | PowerShell execution policy bypass with -C + Invoke-Expression |
+| executable    | batch             | default_exe_bat.ps1 + default.bat | PowerShell execution policy bypass with -C + Invoke-Expression + ReflectivePEInjection (*1) |
+| powershell    | base64 powershell | default.ps1                       | Invoke-Expression |
+| executable    | base64 powershell | default_exe.ps1                   | Invoke-Expression + ReflectivePEInjection (*1) |
 
 (*1) not all binaries work; Meterpreter, mimikatz work. See [DEP](https://stackoverflow.com/questions/350977/how-to-make-my-program-dep-compatible), [ASLR](https://security.stackexchange.com/questions/18556/how-do-aslr-and-dep-work), and [what to do against](https://security.stackexchange.com/questions/20497/stack-overflows-defeating-canaries-aslr-dep-nx).
 
@@ -76,13 +81,23 @@ It's input / output type dependent which template needs changes. See here:
 
 Payload is created by [tvasion.ps1](tvasion.ps1) like this:
 ```
+        -> gzip compression -> base64 encoding -> pasted & compiled into C# dotnet assembly -> AES encryption -> base64 encoding -> pasted & compiled into C# windows executeable (.exe -> .exe)
 payload -> AES encryption -> base64 encoding 
                                 -> pasted into powershell script (.ps1 -> .ps1) 
                                         -> base64 encoding 
                                                 -> pasted & compiled into C# windows executeable (.ps1 -> .exe)             
-                                                -> pasted into batch file (.ps1 | .exe -> .bat)  
-                                                
-payload -> gzip compression -> base64 encoding -> pasted & compiled into C# dotnet assembly -> AES encryption -> base64 encoding -> pasted & compiled into C# windows executeable (.exe -> .exe)
+                                                -> pasted into batch file (.ps1 | .exe -> .bat)
+```
+
+### Obscure options
+
+| Option        |  Value  |
+| ------------- | ------------- |
+| -t rawB64ps1  | base64 encoded powershell output |
+
+For more options see:
+```shell
+ ./tvasion.ps1 -h
 ```
 
 ### Tests
@@ -95,7 +110,7 @@ Run tests:
 - run ./tests.ps1 for compilation / test file creation. see ./out/ for results
 - listen for reverse connections on linux machine:
 ```shell
-# listen for reverse shell connections from ./tests/ReverseShell.ps1 and ./tests/ReverseShell.cs.
+# listen for reverse shell connections from ./tests/ReverseShell.ps1
 nc -nvlp 4242
 ```
 ```shell
@@ -139,3 +154,4 @@ Developer -> fork & pull ;)
 - [C# PE loader](https://github.com/Arno0x/CSharpScripts/blob/master/peloader.cs) @ github
 - [15 ways to bypass PowerShell execution policy](https://blog.netspi.com/15-ways-to-bypass-the-powershell-execution-policy/) @ external blog
 - [AVIator - popular C# AES crypto evasion with UI, without templates](https://github.com/Ch0pin/AVIator) @ github
+- [PEunion - C# crypto evasion with UI, allows bind multiple files, without templates](https://github.com/bytecode77/pe-union) @ github
