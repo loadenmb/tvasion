@@ -1,5 +1,5 @@
-# tvasion - Powershell / C# AES anti virus evasion 
-:performing_arts: Anti virus evasion based on file signature change via AES encryption with Powershell and C# AV evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
+# :performing_arts: tvasion - Powershell / C# AES anti virus evasion 
+Anti virus evasion based on file signature change via AES encryption with Powershell and C# AV evasion templates which support executable and Powershell payloads with Windows executable, Powershell or batch output. Developed with Powershell on Linux for Windows targets :)
 
 Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
 
@@ -91,7 +91,7 @@ payload -> AES encryption -> base64 encoding
 
 ### Obscure options
 
-| Option        |  Value  |
+| Option        |  Explanation  |
 | ------------- | ------------- |
 | -t rawB64ps1  | base64 encoded powershell output |
 
