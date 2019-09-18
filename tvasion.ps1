@@ -306,7 +306,6 @@ class tvasion {
         $this.outType = $outType.ToLower();
 
         # validate type (-t)
-        write-host $this.outType
         if (!($([tvasion]::outputTypes)).contains($this.outType)) {
             throw 'tvasion: invalid output type (-t).';
             return;
