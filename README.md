@@ -15,17 +15,17 @@ Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePE
 
 ## Usage
 ```
- ./tvasion.ps1 -h
+./tvasion.ps1 -h
 tvasion: AES based anti virus evasion
-./tvasion.ps1 -t (exe|bat|ps1|rawb64ps1) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1)
+./tvasion.ps1 -t (exe|bat|ps1|b64ps1|rawb64ps1) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1|b64ps1|rawb64ps1)
 parameter:
-[PAYLOAD (exe|ps1)]         input file path. requires: exe, ps1                     required
--t (exe|ps1|bat|rawB64ps1)  output file type: exe, ps1, bat, rawB64ps1              required
--i (PATH)                   path to icon. requires: .exe output (-t exe)            optional
--f (PATH)                   path to template                                        optional
--o (PATH)                   set output directory. default is ./out/                 optional
--d                          generate debug output                                   optional
--h                          display this help                                       optional
+[PAYLOAD (exe|ps1)]                 input file path. requires: exe, ps1                     required
+-t (exe|ps1|bat|b64ps1|rawb64ps1)   output file type: exe, ps1, bat, rawB64ps1              required
+-i (PATH)                           path to icon. requires: .exe output (-t exe)            optional
+-f (PATH)                           path to template                                        optional
+-o (PATH)                           set output directory. default is ./out/                 optional
+-d                                  generate debug output                                   optional
+-h                                  display this help                                       optional
 examples:
 ./tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell
 ./tvasion.ps1 -t exe out/Meterpreter_amd64.exe -i tests/ghost.ico                 # generate windows executable (.exe) from executable, custom icon (-i)
@@ -93,7 +93,8 @@ payload -> AES encryption -> base64 encoding
 
 | Option        |  Explanation  |
 | ------------- | ------------- |
-| -t rawB64ps1  | base64 encoded powershell output |
+| -t b64ps1  | base64 encoded AES encrypted powershell output |
+| -t rawb64ps1  | plain base64 encoded powershell output (encoding only) |
 
 For more options see:
 ```shell
@@ -143,6 +144,8 @@ resource msf_multihandler.rc
 - create cmdlet / proper psm module?
 - bring back pipes support (string / hex pipes only, pswh has no binary pipes)
 - use consistent rules for replacements: #REPLACE;0#, #REPLACE;1#
+- add raw hex encoded ps1 output
+- add possibility to bind multiple files ./tvasion.ps1 payload1.exe payloadX.exe...
 
 ## Contribute
 Discuss features, report issues, questions -> [here](https://github.com/loadenmb/tvasion/issues).

