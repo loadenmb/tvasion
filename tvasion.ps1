@@ -213,7 +213,7 @@ class tvasion {
     [String] $iconPath = "";
     
     # possible output types for -t
-    static [String[]] $outputTypes = "exe","bat","ps1","b64ps1","rawb64ps1";
+    static [String[]] $outputTypes = "exe","bat","ps1","b64ps1","b64";
     
     # "setter" for options
     
@@ -354,8 +354,12 @@ class tvasion {
            $rawbase64encodedps1.render() > "$($this.outDir)/$($this.outFileName).$($this.outType)";
         
         # raw / plain base64 encoded ouput (encoder only, no AES)
-        } elseif ($this.outType -eq "rawb64ps1") { 
-            [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($this.payload)) > "$($this.outDir)/$($this.outFileName).$($this.outType)";
+        } elseif ($this.outType -eq "b64") { 
+            if ($this.inType -eq "ps1") {
+                [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($this.payload)) > "$($this.outDir)/$($this.outFileName).$($this.outType)";
+            } else {
+                [System.Convert]::ToBase64String($this.payload) > "$($this.outDir)/$($this.outFileName).$($this.outType)";
+            }
         }
         write-host "tvasion: payload written to file: $($this.outDir)/$($this.outFileName).$($this.outType)"; 
     }
@@ -542,7 +546,7 @@ class tvasion {
         write-host "./tvasion.ps1 -t ($($([tvasion]::outputTypes) -join '|')) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t ($($([tvasion]::outputTypes) -join '|'))";
         write-host 'parameter:';
         write-host '[PAYLOAD (exe|ps1)]                 input file path. requires: exe, ps1                     required';
-        write-host '-t (exe|ps1|bat|b64ps1|rawb64ps1)   output file type: exe, ps1, bat, rawB64ps1              required';
+        write-host '-t (exe|ps1|bat|b64ps1|b64)         output file type: exe, ps1, bat, b64ps1, rawB64ps1      required';
         write-host '-i (PATH)                           path to icon. requires: .exe output (-t exe)            optional';
         write-host '-f (PATH)                           path to template                                        optional';
         write-host '-o (PATH)                           set output directory. default is ./out/                 optional';

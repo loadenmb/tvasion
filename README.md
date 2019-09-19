@@ -17,10 +17,10 @@ Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePE
 ```
 ./tvasion.ps1 -h
 tvasion: AES based anti virus evasion
-./tvasion.ps1 -t (exe|bat|ps1|b64ps1|rawb64ps1) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1|b64ps1|rawb64ps1)
+./tvasion.ps1 -t (exe|bat|ps1|b64ps1|b64) [PAYLOAD (exe|ps1)] OR ./tvasion.ps1 [PAYLOAD (exe|ps1)] -t (exe|bat|ps1|b64ps1|b64)
 parameter:
 [PAYLOAD (exe|ps1)]                 input file path. requires: exe, ps1                     required
--t (exe|ps1|bat|b64ps1|rawb64ps1)   output file type: exe, ps1, bat, rawB64ps1              required
+-t (exe|ps1|bat|b64ps1|b64)         output file type: exe, ps1, bat, b64ps1, b64            required
 -i (PATH)                           path to icon. requires: .exe output (-t exe)            optional
 -f (PATH)                           path to template                                        optional
 -o (PATH)                           set output directory. default is ./out/                 optional
@@ -93,8 +93,8 @@ payload -> AES encryption -> base64 encoding
 
 | Option        |  Explanation  |
 | ------------- | ------------- |
-| -t b64ps1  | base64 encoded AES encrypted powershell output |
-| -t rawb64ps1  | plain base64 encoded powershell output (encoding only) |
+| -t b64ps1  | base64 encoded AES encrypted powershell output. "base64 powershell" @ template table |
+| -t b64  | plain base64 encoded output (encoding only) |
 
 For more options see:
 ```shell
