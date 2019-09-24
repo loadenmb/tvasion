@@ -3,6 +3,8 @@ Anti virus evasion based on file signature change via AES encryption with Powers
 
 Buzzwords: Anti virus evasion, AV evasion, crypter, AES encryption, ReflectivePEInjection, PowerShell execution policy bypass
 
+### !!! Work in progress. See TODO. Powershell related ouput not FUD !!!
+
 [https://github.com/loadenmb/tvasion](https://github.com/loadenmb/tvasion)
 
 ## Features
